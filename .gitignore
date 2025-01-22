@@ -24,3 +24,6 @@ zig-cache/
 
 # Nix's result
 result
+
+# nix-direnv
+.direnv/
