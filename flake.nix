@@ -1,58 +1,56 @@
 {
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/23.11";
-    zig.url = "github:mitchellh/zig-overlay";
-    flake-utils.url = "github:numtide/flake-utils";
-    treefmt-nix.url = "github:numtide/treefmt-nix";
+    nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
+    systems.url = "github:nix-systems/default";
+    flake-parts = {
+      url = "github:hercules-ci/flake-parts";
+      inputs.nixpkgs-lib.follows = "nixpkgs";
+    };
+    treefmt-nix = {
+      url = "github:numtide/treefmt-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = { self, nixpkgs, systems, flake-utils, zig, treefmt-nix }:
-    flake-utils.lib.eachDefaultSystem (system:
-      let
-        overlays =
-          [ (final: prev: { zigpkgs = zig.packages.${prev.system}; }) ];
-        pkgs = import nixpkgs { inherit system overlays; };
-        stdenv = pkgs.stdenv;
-        eachSystem = f:
-          pkgs.lib.genAttrs (import systems)
-          (systems: f nixpkgs.legacyPackages.${system});
-        treefmtEval =
-          eachSystem (pkgs: treefmt-nix.lib.evalModule pkgs ./treefmt.nix);
-        god = stdenv.mkDerivation {
-          pname = "god";
-          version = "0.1.0";
-          src = ./.;
+  outputs =
+    inputs:
+    inputs.flake-parts.lib.mkFlake { inherit inputs; } {
+      systems = import inputs.systems;
+      imports = [
+        inputs.treefmt-nix.flakeModule
+      ];
 
-          buildInputs = with pkgs; [ zigpkgs."0.13.0" ];
+      perSystem =
+        { pkgs, lib, ... }:
+        let
+          god = pkgs.stdenv.mkDerivation {
+            pname = "god";
+            version = "dev";
+            src = lib.cleanSource ./.;
 
-          buildPhase = ''
-            zig build --release=safe
-          '';
+            nativeBuildInputs = [
+              pkgs.zig_0_13.hook
+            ];
+          };
+        in
+        {
+          treefmt = {
+            projectRootFile = "flake.nix";
+            programs.nixfmt.enable = true;
+            programs.zig.enable = true;
+          };
 
-          installPhase = ''
-            mkdir -p $out/bin
-            install -D544 zig-out/bin/God $out/bin
-          '';
+          packages = {
+            inherit god;
+            default = god;
+          };
+
+          devShells.default = pkgs.mkShell {
+            packages = [
+              pkgs.zig_0_13
+              pkgs.nil
+            ];
+          };
         };
-      in {
-        # Use `nix fmt`
-        formatter = treefmtEval.${system}.config.build.wrapper;
-
-        # Use `nix flake check`
-        checks.formatting = treefmtEval.${system}.config.build.check self;
-
-        packages = {
-          inherit god;
-          default = god;
-        };
-
-        devShells.default = pkgs.mkShell {
-          nativeBuildInputs = with pkgs; [ zigpkgs."0.13.0" ];
-
-          shellHook = ''
-            export PS1="\n[nix-shell:\w]$ "
-          '';
-        };
-      });
+    };
 }
-
