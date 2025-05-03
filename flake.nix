@@ -25,20 +25,27 @@
         { pkgs, lib, ... }:
         let
           god = pkgs.stdenv.mkDerivation {
-            pname = "god";
-            version = "dev";
+            name = "god";
             src = lib.cleanSource ./.;
 
             nativeBuildInputs = [
-              pkgs.zig_0_13.hook
+              pkgs.scons
             ];
+
+            buildPhase = ''
+              scons
+            '';
+
+            installPhase = ''
+              mkdir -p $out/bin
+              cp .build/god $out/bin
+            '';
           };
         in
         {
           treefmt = {
             projectRootFile = "flake.nix";
             programs.nixfmt.enable = true;
-            programs.zig.enable = true;
           };
 
           packages = {
@@ -47,9 +54,10 @@
           };
 
           devShells.default = pkgs.mkShell {
-            packages = [
-              pkgs.zig_0_13
+            nativeBuildInputs = [
               pkgs.nil
+              pkgs.ruff
+              pkgs.scons
             ];
           };
         };

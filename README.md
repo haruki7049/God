@@ -2,5 +2,5 @@
 want to try to 'god pull'...?
 
 ## Environments
-- Zig 0.13.0
+- gcc 14.2.1
 - Nix 2.18.2
