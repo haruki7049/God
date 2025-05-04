@@ -46,6 +46,18 @@
           treefmt = {
             projectRootFile = "flake.nix";
             programs.nixfmt.enable = true;
+            programs.clang-format.enable = true;
+            programs.ruff-format.enable = true;
+            programs.ruff-check.enable = true;
+
+            settings.formatter.ruff-format.includes = [
+              "SConstruct"
+              "SCsub"
+            ];
+            settings.formatter.ruff-check.includes = [
+              "SConstruct"
+              "SCsub"
+            ];
           };
 
           packages = {

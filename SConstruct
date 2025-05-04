@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
-VARIANT_DIR = '.build'
+import SCons.Script
 
-SConscript("src/SCsub", variant_dir=VARIANT_DIR)
+VARIANT_DIR = ".build"
+
+SCons.Script.SConscript("src/SCsub", variant_dir=VARIANT_DIR)
