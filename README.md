@@ -1,4 +1,5 @@
 # God
+**This command is still WIP**
 want to try to 'god pull'...?
 
 ## Environments
